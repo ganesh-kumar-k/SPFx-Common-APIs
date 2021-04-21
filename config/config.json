@@ -1,0 +1,36 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "nojavascript-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/nojavascript/NojavascriptWebPart.js",
+          "manifest": "./src/webparts/nojavascript/NojavascriptWebPart.manifest.json"
+        }
+      ]
+    },
+    "reactwebpart-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/reactwebpart/ReactwebpartWebPart.js",
+          "manifest": "./src/webparts/reactwebpart/ReactwebpartWebPart.manifest.json"
+        }
+      ]
+    },
+    "document-upload-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/documentUpload/DocumentUploadWebPart.js",
+          "manifest": "./src/webparts/documentUpload/DocumentUploadWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "NojavascriptWebPartStrings": "lib/webparts/nojavascript/loc/{locale}.js",
+    "ReactwebpartWebPartStrings": "lib/webparts/reactwebpart/loc/{locale}.js",
+    "DocumentUploadWebPartStrings": "lib/webparts/documentUpload/loc/{locale}.js"
+  }
+}
