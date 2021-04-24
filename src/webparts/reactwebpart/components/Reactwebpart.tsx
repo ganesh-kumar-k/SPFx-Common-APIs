@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styles from './Reactwebpart.module.scss';
 import { IReactwebpartProps } from './IReactwebpartProps';
-import { SPHttpClient, SPHttpClientResponse, SPHttpClientConfiguration,IHttpClientOptions } from '@microsoft/sp-http';
+import { SPHttpClient, SPHttpClientResponse, SPHttpClientConfiguration,IHttpClientOptions,DigestCache,IDigestCache } from '@microsoft/sp-http';
 import { escape } from '@microsoft/sp-lodash-subset';
 
 import * as $ from "jquery"; 
@@ -9,6 +9,7 @@ import * as $ from "jquery";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "datatables.net-dt/js/dataTables.dataTables" 
 import "datatables.net-dt/css/jquery.dataTables.min.css"
+import { data } from 'jquery';
 
 interface IReactwebpartStates{
   countries : any[];
@@ -25,8 +26,65 @@ export default class Reactwebpart extends React.Component<IReactwebpartProps, IR
   }
 
   componentDidMount(){
-    this.GetCountries();
-    this.GetUsers();
+    // this.GetCountries();
+    // this.GetUsers();
+    this.GetStudent();
+  }
+
+  private GetStudent = async () => {
+
+    console.log("Started"); //1
+
+    const respose = await $.ajax({
+      url : "https://qantler.sharepoint.com/sites/practice/LeaveManagementSystem/_api/web/lists/getbytitle('StudentList')/items?$select=Title,RollNo,DeptId,LeaveTypeId,FromDate,ToDate,TotalNoOfDays,Id,UsersId,Dept/Title,LeaveType/Title,Users/Name,Users/EMail,Users/Title&$expand=Dept,LeaveType,Users",
+      type : 'GET',
+      headers : {
+        'accept' : 'application/json;odata=verbose'
+      }
+      // success : (data) => {
+        //respon = data;
+      //   console.log(data); // 3
+      // },
+      // error : (error) => {
+      //   console.error(error); //3
+      // }
+    });
+
+    console.log(respose); //2
+
+    console.log("GET Method Ended"); //3
+
+    this.addUsers();
+
+  }
+
+  private async addUsers(){
+
+    const digestCache: IDigestCache = this.props.context.serviceScope.consume(DigestCache.serviceKey);
+    const digest: string = await digestCache.fetchDigest(this.props.context.pageContext.web.serverRelativeUrl);
+    let metadata = {
+      "__metadata" : {"type" : "SP.Data.StudentListListItem"},
+      "Title" : "Student Name",
+      "RollNo" : "004",
+      "DeptId" : 3,
+      "LeaveTypeId": 5,
+      "UsersId": { 'results': [143] }
+      //"UsersId" : [143]
+    }
+    const response = await $.ajax({
+      url : "https://qantler.sharepoint.com/sites/practice/LeaveManagementSystem/_api/web/lists/getbytitle('StudentList')/items",
+      type: "POST",
+      headers: {
+        "Accept": "application/json;odata=verbose",
+        //Content-Type header: Specifies the format of the data that the client is sending to the server
+        "Content-Type": "application/json;odata=verbose",
+        "X-RequestDigest": digest
+      },
+      data : JSON.stringify(metadata)
+    });
+
+    console.log(response);
+    console.log("POST method ended");
   }
 
   private GetCountries() {
@@ -73,7 +131,6 @@ export default class Reactwebpart extends React.Component<IReactwebpartProps, IR
           // "autoWidth": false
         });
 
-        console.log(values);
 
 
       },
@@ -149,11 +206,11 @@ export default class Reactwebpart extends React.Component<IReactwebpartProps, IR
               <div className="col-10">
                 <select className="form-control" id="country">
                   <option>-- Select --</option>
-                  {
+                  {/* {
                     this.state.countries.map((country) => {
                       return <option value={country.Id}>{country.Title}</option> //<option value="1">India</option>
                     })
-                  }
+                  } */}
                 </select>
               </div>
             </div>
@@ -178,7 +235,7 @@ export default class Reactwebpart extends React.Component<IReactwebpartProps, IR
             </thead>
             <tbody>
 
-              {
+              {/* {
                 this.state.users.map((user) => {
                  // <tr><td>001</td>Ganesh</td>....</tr>
                   return (
@@ -194,7 +251,7 @@ export default class Reactwebpart extends React.Component<IReactwebpartProps, IR
                   )
 
                 })
-              }
+              } */}
             </tbody>
           </table>
         </div>

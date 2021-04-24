@@ -14,6 +14,10 @@ export default class APIHelper {
 
      /**
      * Service constructor
+     * @inheritdoc
+     * import APIHelper from '../../../utilities/APIHelper';
+     * @example
+     * const ApiHelper: APIHelper = new APIHelper(this.props.context);
      */
      constructor(_pageContext: WebPartContext) {
         this.context = _pageContext;
@@ -76,7 +80,7 @@ export default class APIHelper {
                 if(response.d.hasOwnProperty("ListItemAllFields")){  //To check the uri property
 
                     let fileListItemUri = response.d.ListItemAllFields.__deferred.uri;
-                    const listItem = await _this.getListItemUsingRestApi(fileListItemUri);
+                    const listItem = await _this.getListItemsUsingRestApi(fileListItemUri);
                     _metadata["__metadata"] = {'type':`${ listItem.d.__metadata.type }`};
                     const result = await _this.updateListItemUsingRestApi(listItem.d.__metadata.uri,_metadata);
 
@@ -141,7 +145,7 @@ export default class APIHelper {
                     if(response.hasOwnProperty("@odata.id")){  //To check the uri property
 
                         let fileListItemUri = response["@odata.id"] + "/ListItemAllFields";
-                        const listItem = await this.getListItemUsingRestApi(fileListItemUri);
+                        const listItem = await this.getListItemsUsingRestApi(fileListItemUri);
                         const result = await this.updateListItem(listItem.d.__metadata.uri,_metadata);
 
                         return result;
@@ -175,7 +179,7 @@ export default class APIHelper {
 
         //To check and add the list type name if not exists
         if(!_metadata.hasOwnProperty("__metadata")){
-            var itemMetadata = await this.getListItemUsingRestApi(itemUrl);
+            var itemMetadata = await this.getListItemsUsingRestApi(itemUrl);
             _metadata["__metadata"] = itemMetadata.d.__metadata;
         }
 
@@ -249,11 +253,11 @@ export default class APIHelper {
     =======================================================*/
     /**
      * To get the list item with the REST API..
-     * @param itemUrl URI of the item to update.
+     * @param itemUrl URI of the item to retrieve.
      * @example 
      * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items", 
      */
-    public async getListItemUsingRestApi(ItemUrl:string) : Promise<any> {
+    public async getListItemsUsingRestApi(ItemUrl:string) : Promise<any> {
         // Send the request and return the response.
         const response = await $.ajax({
             url: ItemUrl,
@@ -262,6 +266,192 @@ export default class APIHelper {
         });
 
         return response;
+    }
+
+    /*=====================================================
+            Retrieve List Item using  SPHTTPClient
+    =======================================================*/
+    /**
+     * To retrieve the list item with the SPHTTPClient.
+     * @param itemUrl URI of the item to retrieve.
+     * @example 
+     * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items", 
+     */
+     public getListItems(itemUrl:string) : Promise<any> {
+    
+        const header = {  
+            'Accept': 'application/json;odata=nometadata',  
+            'odata-version': ''  
+        };
+
+        const httpClientOptions: IHttpClientOptions = {  
+            headers: header
+        };
+
+        // Send the request and return the promise.
+        // This call does not return response content from the server.
+        return this.context.spHttpClient.post(itemUrl,SPHttpClient.configurations.v1,httpClientOptions).then((response: SPHttpClientResponse) => {
+            console.log(`Item successfully received`);
+            return response;
+        },(error: any) => {
+            console.error(error);
+            return error;
+        });
+    }
+
+    /*=====================================================
+            Add List Item using  Rest API
+    =======================================================*/
+    /**
+     * To add the list item with the REST API.
+     * @param itemUrl URI of the item to add.
+     * @param metadata Metadata for the item.
+     * @example 
+     * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items", 
+     */
+     public async addListItemUsingRestApi(itemUrl: string,metadata: object) : Promise<any> {
+
+        var url = itemUrl;
+        var _metadata = JSON.parse(JSON.stringify(metadata));
+
+        //To check and add the list type name if not exists
+        if(!_metadata.hasOwnProperty("__metadata")){
+            var itemMetadata = await this.getListItemsUsingRestApi(itemUrl);
+            _metadata["__metadata"] = itemMetadata.d.__metadata;
+        }
+
+        var body = JSON.stringify(_metadata);
+
+        // Send the request and return the promise.
+        // This call does not return response content from the server.
+        const response = await $.ajax({
+            url: url,
+            type: "POST",
+            data: body,
+            headers: {
+                "Accept": "application/json;odata=verbose",
+                "Content-Type": "application/json;odata=verbose",
+                "X-RequestDigest": this.digest
+            }
+        });
+
+        return response;
+
+    }
+
+    /*=====================================================
+            Update List Item using  SPHTTPClient
+    =======================================================*/
+    /**
+     * To add the list item with the SPHTTPClient.
+     * @param itemUrl URI of the item to add.
+     * @param metadata Metadata for the item.
+     * @example 
+     * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items", 
+     */
+    public addListItem(itemUrl:string,metadata: object) : Promise<any> {
+
+        var url = itemUrl;
+        var _metadata = JSON.parse(JSON.stringify(metadata));
+
+        //To remove the __metadata property if exists
+        if(_metadata.hasOwnProperty("__metadata")){
+            delete _metadata.__metadata;
+        }
+    
+        const header = {  
+            'Accept': 'application/json;odata=nometadata',  
+            'Content-type': 'application/json;odata=nometadata',  
+            'odata-version': '' 
+        };
+
+        const httpClientOptions: IHttpClientOptions = {  
+            headers: header,
+            body: JSON.stringify(_metadata)
+        };
+
+        // Send the request and return the promise.
+        // This call does not return response content from the server.
+        return this.context.spHttpClient.post(url,SPHttpClient.configurations.v1,httpClientOptions).then((response: SPHttpClientResponse) => {
+            console.log(`Item successfully added`);
+            return response;
+        },(error: any) => {
+            console.error(error);
+            return error;
+        });
+    }
+
+    /*=====================================================
+            Delete List Item using  Rest API
+    =======================================================*/
+    /**
+     * To delete the list item with the REST API.
+     * @param itemUrl URI of the item to delete.
+     * @example 
+     * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items(1)", 
+     */
+     public async deleteListItemUsingRestApi(itemUrl: string) : Promise<any> {
+
+        var url = itemUrl;
+
+        // Send the request and return the promise.
+        // This call does not return response content from the server.
+        const response = await $.ajax({
+            url: url,
+            type: "POST",
+            headers: {
+                // Accept header: Specifies the format for response data from the server.
+                "Accept": "application/json;odata=verbose",
+                //Content-Type header: Specifies the format of the data that the client is sending to the server
+                "Content-Type": "application/json;odata=verbose",
+                // IF-MATCH header: Provides a way to verify that the object being changed has not been changed since it was last retrieved.
+                // "IF-MATCH":"*", will overwrite any modification in the object, since it was last retrieved.
+                "IF-MATCH": "*",
+                //X-HTTP-Method:  The MERGE method updates only the properties of the entity , while the PUT method replaces the existing entity with a new one that you supply in the body of the POST
+                "X-HTTP-Method": "DELETE",
+                // X-RequestDigest header: When you send a POST request, it must include the form digest value in X-RequestDigest header
+                "X-RequestDigest": this.digest
+            }
+        });
+
+        return response;
+
+    }
+
+    /*=====================================================
+            Delete List Item using  SPHTTPClient
+    =======================================================*/
+    /**
+     * To delete the list item with the SPHTTPClient.
+     * @param itemUrl URI of the item to delete.
+     * @example 
+     * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items(1)", 
+     */
+    public deleteListItem(itemUrl:string) : Promise<any> {
+
+        var url = itemUrl;
+    
+        const header = {  
+            'Accept': 'application/json;odata=nometadata',  
+            'Content-type': 'application/json;odata=verbose',  
+            'odata-version': '',  
+            'IF-MATCH': '*',  
+            'X-HTTP-Method': 'DELETE' 
+        };
+
+        const httpClientOptions: IHttpClientOptions = {  
+            headers: header,
+        };
+
+        // Send the request and return the promise.
+        // This call does not return response content from the server.
+        return this.context.spHttpClient.post(url,SPHttpClient.configurations.v1,httpClientOptions).then((response: SPHttpClientResponse) => {
+            console.log(`Item successfully deleted`);
+            return response;
+        },(error: any) => {
+            console.error(error);
+            return error;
+        });
     }
 
     /*=====================================================
