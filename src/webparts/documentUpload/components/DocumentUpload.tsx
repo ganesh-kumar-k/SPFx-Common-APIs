@@ -18,6 +18,8 @@ export default class DocumentUpload extends React.Component<IDocumentUploadProps
   componentDidMount = () => {
     //this.updatePic();'
     //module.addFileToFolder(this.props.context,)
+    let metadata = {};
+    this.ApiHelper.addListItemUsingRestApi("",metadata);
     document.getElementById("btn_submit").addEventListener('click',this.addFileToFolder.bind(this));
   }
 
