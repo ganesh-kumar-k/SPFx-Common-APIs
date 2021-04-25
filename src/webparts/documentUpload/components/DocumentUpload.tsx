@@ -8,18 +8,17 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 export default class DocumentUpload extends React.Component<IDocumentUploadProps, {}> {
 
-  private ApiHelper: APIHelper;
+  private APIHelper: APIHelper;
   
   constructor(props){
     super(props);
-    this.ApiHelper = new APIHelper(this.props.context);
+    this.APIHelper = new APIHelper(this.props.context);
   }
 
   componentDidMount = () => {
     //this.updatePic();'
     //module.addFileToFolder(this.props.context,)
-    let metadata = {};
-    this.ApiHelper.addListItemUsingRestApi("",metadata);
+
     document.getElementById("btn_submit").addEventListener('click',this.addFileToFolder.bind(this));
   }
 
@@ -33,14 +32,18 @@ export default class DocumentUpload extends React.Component<IDocumentUploadProps
     let metadata = { Title : new Date().getSeconds().toString()};
     let metadata2 = { "__metadata" : "dta",Title : new Date().getSeconds().toString()};
 
+    const results = await this.APIHelper.uploadMultipleFilesToFolder(serverRelativeUrl, fileId, metadata);
+    console.log(results);
 
-    const result = await this.ApiHelper.addFileToFolderUsingRestApi(serverRelativeUrl,fileId,metadata);
+    return;
+    const result = await this.APIHelper.uploadFileToFolderUsingRestApi(serverRelativeUrl,fileId,metadata);
+    
     //const result1 = await this.ApiHelper.addFileToFolder(serverRelativeUrl,fileId,metadata2);
     var url1 = "https://qantler.sharepoint.com/sites/practice/john/_api/web/lists/getbytitle('SpfxPic')/items(28)"
     let metadata1 = { 
       "AdduserId" : [9]
     };
-    const result2 = await this.ApiHelper.updateListItem(url1,metadata1);
+    const result2 = await this.APIHelper.updateListItem(url1,metadata1);
     alert("Completed");
     // console.log(result);
     // console.log(result1);
@@ -93,7 +96,7 @@ export default class DocumentUpload extends React.Component<IDocumentUploadProps
             <div className="form-group">
               <label htmlFor="dob" className="col-3 col-form-label">Users</label>
               <div className="col-10">
-                <input id="getFile" type="file"/>
+                <input id="getFile" type="file" multiple/>
               </div>
             </div>
             <button type="button" className="btn btn-primary m-3 float-left" id="btn_submit">Upload</button>

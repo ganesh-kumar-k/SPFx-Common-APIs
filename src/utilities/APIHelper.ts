@@ -5,8 +5,8 @@ EMail  : kganeshkumar996@gmail.com
 
 import { SPHttpClient, SPHttpClientResponse, IHttpClientOptions, IDigestCache, DigestCache } from '@microsoft/sp-http';
 import { WebPartContext } from "@microsoft/sp-webpart-base";
+import { getFileBuffer } from './CommonFunction';
 import * as $ from "jquery";
-
 export default class APIHelper {
 
     private context: WebPartContext;
@@ -41,9 +41,13 @@ export default class APIHelper {
      * var serverRelativeUrl = "/sites/rootsite/subsite/shared documents", 
      * var elementId = "getFile"
      */
-    public async addFileToFolderUsingRestApi(serverRelativeUrl:string,elementId:string,metadata?): Promise<any> {
+    public async uploadFileToFolderUsingRestApi(serverRelativeUrl: string,elementId: string,metadata?: object): Promise<any> {
         
         var _this = this;
+
+        var fileCount = fileInput[0].files.length;
+        if(fileCount == 0)
+            return "File is empty";
 
         var _metadata = JSON.parse(JSON.stringify(metadata)); 
 
@@ -53,7 +57,7 @@ export default class APIHelper {
         var fileName = parts[parts.length - 1];
 
         // Get the local file as an array buffer.
-        var arrayBuffer = await this.getFileBuffer(elementId);
+        var arrayBuffer = await getFileBuffer(elementId);
 
         // Construct the endpoint.
         var fileCollectionEndpoint = `${this.context.pageContext.web.absoluteUrl}/_api/web/getfolderbyserverrelativeurl('${serverRelativeUrl}')/files/add(overwrite=true, url='${fileName}')`;
@@ -107,30 +111,36 @@ export default class APIHelper {
      * @param serverRelativeUrl Server Relative Url of the folder or library.
      * @param elementId String that specifies the ID value.
      * @param metadata Metadata for the document (optional).
+     * @param fileInput File input value
      * @example 
      * var serverRelativeUrl = "/sites/rootsite/subsite/shared documents", 
      * var elementId = "getFile"
      */
-    public async addFileToFolder(serverRelativeUrl:string,elementId:string,metadata?): Promise<any> {
+    public async uploadFileToFolder(serverRelativeUrl: string,elementId: string,metadata?: object,file?: File): Promise<any> {
         
-        var _metadata = JSON.parse(JSON.stringify(metadata)); 
-
         // Get the file name from the file input control on the page.
-        var fileInput:any = $('#'+elementId);
-        var parts = fileInput[0].value.split('\\');
-        var fileName = parts[parts.length - 1];
+        var fileInput: HTMLInputElement = (<HTMLInputElement>document.getElementById(elementId));
+
+        if(fileInput.files.length == 0)
+            return "File is empty";
+        
+        var _metadata = JSON.parse(JSON.stringify(metadata));
+
+        var fileName = file != undefined ? file.name : fileInput.files.item(0).name;
+
+        var _file = file != undefined ? file : fileInput.files.item(0);
 
         // Construct the endpoint.
         var fileCollectionEndpoint = `${this.context.pageContext.web.absoluteUrl}/_api/web/getfolderbyserverrelativeurl('${serverRelativeUrl}')/files/add(overwrite=true, url='${fileName}')`;
 
-        // Construct options
+        // Construct headers
         const header = {  
             "accept": "application/json",
             'Content-type': 'application/json'
         };
 
         const httpClientOptions: IHttpClientOptions = {  
-            body: fileInput[0].files[0],  
+            body: _file,  
             headers: header
         };
 
@@ -172,7 +182,7 @@ export default class APIHelper {
      * @example 
      * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items(1)", 
      */
-    public async updateListItemUsingRestApi(itemUrl: string,metadata) : Promise<any> {
+    public async updateListItemUsingRestApi(itemUrl: string,metadata: object) : Promise<any> {
 
         var url = itemUrl;
         var _metadata = JSON.parse(JSON.stringify(metadata));
@@ -214,7 +224,7 @@ export default class APIHelper {
      * @example 
      * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items(1)", 
      */
-    public updateListItem(itemUrl:string,metadata) : Promise<any> {
+    public updateListItem(itemUrl: string,metadata: object) : Promise<any> {
 
         var url = itemUrl;
         var _metadata = JSON.parse(JSON.stringify(metadata));
@@ -257,7 +267,7 @@ export default class APIHelper {
      * @example 
      * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items", 
      */
-    public async getListItemsUsingRestApi(ItemUrl:string) : Promise<any> {
+    public async getListItemsUsingRestApi(ItemUrl: string) : Promise<any> {
         // Send the request and return the response.
         const response = await $.ajax({
             url: ItemUrl,
@@ -277,7 +287,7 @@ export default class APIHelper {
      * @example 
      * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items", 
      */
-     public getListItems(itemUrl:string) : Promise<any> {
+     public getListItems(itemUrl: string) : Promise<any> {
     
         const header = {  
             'Accept': 'application/json;odata=nometadata',  
@@ -349,7 +359,7 @@ export default class APIHelper {
      * @example 
      * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items", 
      */
-    public addListItem(itemUrl:string,metadata: object) : Promise<any> {
+    public addListItem(itemUrl: string,metadata: object) : Promise<any> {
 
         var url = itemUrl;
         var _metadata = JSON.parse(JSON.stringify(metadata));
@@ -427,7 +437,7 @@ export default class APIHelper {
      * @example 
      * var itemUrl = "https://contoso.sharepoint.com/sites/rootsite/subsite/_api/web/lists/getbytitle('Documents')/items(1)", 
      */
-    public deleteListItem(itemUrl:string) : Promise<any> {
+    public deleteListItem(itemUrl: string) : Promise<any> {
 
         var url = itemUrl;
     
@@ -455,23 +465,38 @@ export default class APIHelper {
     }
 
     /*=====================================================
-            Retrieve the file array buffer
+            Upload multiple files using SPHTTPClient
     =======================================================*/
     /**
-     * Get the local file as an array buffer.
+     * You can upload multiple files with the SPHTTPClient.
+     * @param serverRelativeUrl Server Relative Url of the folder or library.
+     * @param elementId String that specifies the ID value.
+     * @param metadata Metadata for the document (optional).
+     * @example 
+     * var serverRelativeUrl = "/sites/rootsite/subsite/shared documents", 
+     * var elementId = "getFile"
      */
-    private getFileBuffer(fileElementId: string) {
-        var fileInput:any = $('#' + fileElementId);
-        var deferred = $.Deferred();
-        var reader = new FileReader();
-        reader.onloadend = function (e:any) {
-        deferred.resolve(e.target.result);
-        }
-        reader.onerror = function (e:any) {
-        deferred.reject(e.target.error);
-        }
-        reader.readAsArrayBuffer(fileInput[0].files[0]);
-        return deferred.promise();
+    public async uploadMultipleFilesToFolder(serverRelativeUrl: string,elementId: string,metadata?: object): Promise<any> {
+       
+        // Get values from the file input and text input page controls.
+        var fileInput: HTMLInputElement = (<HTMLInputElement>document.getElementById(elementId));
+
+        if(fileInput.files.length == 0)
+            return "File is empty";
+
+        var fileCount  = fileInput.files.length;
+        var count: number = 0;
+        var filesResponse = Array.prototype.map.call(fileInput.files,async (file: File) =>{
+
+            const response = await this.uploadFileToFolder(serverRelativeUrl,elementId,metadata,file);
+            count++;
+            console.log("Total file uploaded: " + count + " of " + fileCount);
+            return response;
+
+        });
+        
+        const result = await Promise.all(filesResponse);
+        return result;
     }
 
 }
