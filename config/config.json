@@ -25,12 +25,30 @@
           "manifest": "./src/webparts/documentUpload/DocumentUploadWebPart.manifest.json"
         }
       ]
+    },
+    "sp-fx-alm-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/spFxAlm/SpFxAlmWebPart.js",
+          "manifest": "./src/webparts/spFxAlm/SpFxAlmWebPart.manifest.json"
+        }
+      ]
+    },
+    "office-ui-fabric-people-picker-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/officeUiFabricPeoplePicker/OfficeUiFabricPeoplePickerWebPart.js",
+          "manifest": "./src/webparts/officeUiFabricPeoplePicker/OfficeUiFabricPeoplePickerWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
   "localizedResources": {
     "NojavascriptWebPartStrings": "lib/webparts/nojavascript/loc/{locale}.js",
     "ReactwebpartWebPartStrings": "lib/webparts/reactwebpart/loc/{locale}.js",
-    "DocumentUploadWebPartStrings": "lib/webparts/documentUpload/loc/{locale}.js"
+    "DocumentUploadWebPartStrings": "lib/webparts/documentUpload/loc/{locale}.js",
+    "SpFxAlmWebPartStrings": "lib/webparts/spFxAlm/loc/{locale}.js",
+    "OfficeUiFabricPeoplePickerWebPartStrings": "lib/webparts/officeUiFabricPeoplePicker/loc/{locale}.js"
   }
 }

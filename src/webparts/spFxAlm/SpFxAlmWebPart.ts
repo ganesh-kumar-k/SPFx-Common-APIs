@@ -7,28 +7,29 @@ import {
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 
-import * as strings from 'DocumentUploadWebPartStrings';
-import DocumentUpload from './components/DocumentUpload';
-import { IDocumentUploadProps } from './components/IDocumentUploadProps';
+import * as strings from 'SpFxAlmWebPartStrings';
+import SpFxAlm from './components/SpFxAlm';
+import { ISpFxAlmProps } from './components/ISpFxAlmProps';
+import { sp } from '@pnp/sp';
+import HttpService from '../spFxAlm/components/service';
 
-if (window.location.href.indexOf("/_layouts/15/Workbench.aspx") > -1) {
-  console.log("Webpart running locally");
-  require('../../styles/workbench.scss');
-}
 
-export interface IDocumentUploadWebPartProps {
+export interface ISpFxAlmWebPartProps {
   description: string;
 }
 
-export default class DocumentUploadWebPart extends BaseClientSideWebPart<IDocumentUploadWebPartProps> {
+export default class SpFxAlmWebPart extends BaseClientSideWebPart<ISpFxAlmWebPartProps> {
+
+  protected async onInit(): Promise<void> {
+    HttpService.Init(this.context.spHttpClient);  
+  }
 
   public render(): void {
-
-    const element: React.ReactElement<IDocumentUploadProps> = React.createElement(
-      DocumentUpload,
+    const element: React.ReactElement<ISpFxAlmProps> = React.createElement(
+      SpFxAlm,
       {
-        description: this.properties.description,
-        context: this.context
+        url: this.context.pageContext.web.absoluteUrl,
+        rootSiteUrl: this.context.pageContext.web.serverRelativeUrl.length > 1 ? this.context.pageContext.web.absoluteUrl.replace(this.context.pageContext.web.serverRelativeUrl,"") : this.context.pageContext.web.absoluteUrl
       }
     );
 
@@ -39,7 +40,6 @@ export default class DocumentUploadWebPart extends BaseClientSideWebPart<IDocume
     ReactDom.unmountComponentAtNode(this.domElement);
   }
 
-  // @ts-ignore
   protected get dataVersion(): Version {
     return Version.parse('1.0');
   }
